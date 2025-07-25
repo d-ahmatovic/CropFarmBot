@@ -1,4 +1,5 @@
 #include <vector>
+#include <unordered_set>
 #include <algorithm>
 #include <map>
 
@@ -166,20 +167,12 @@ static std::vector<std::string_view> GetPossibleHarvestOutput(std::string_view b
     return {};
 }
 
-
-struct CropData
-{
-    Botcraft::Position Position;
-    std::string_view CropName;
-};
-
-
 Status FindAllCrops(BehaviourClient& client)
 {
     std::shared_ptr<Config> cfg = Config::GetInstance();
     int radius = cfg->WorkRange;
 
-    std::vector<CropData> crop_positions;
+    std::unordered_set<CropData> crop_positions;
     std::shared_ptr<World> world = client.GetWorld();
 
     const Position& client_pos = client.GetLocalPlayer()->GetPosition();
@@ -224,16 +217,33 @@ Status FindAllCrops(BehaviourClient& client)
                 {
                     continue;
                 }
-                crop_positions.emplace_back(current_pos, block_name);
+
+                if (IsHighGrowingCrop(block_name))
+                {
+                    Position search_pos = current_pos;
+
+                    for (int i = 0; i < radius; i++)
+                    {
+
+                    }
+
+                    while (true)
+                    {
+                        const Blockstate* search_block = world->GetBlock(search_pos);
+                        // TODO: Add actual logic
+                    }
+                }
+                crop_positions.emplace(current_pos, block_name);
             }
         }
     }
+    client.GetBlackboard().Set("cropfarm.crops", crop_positions);
+
     if (crop_positions.size() != 0)
     {
-        client.GetBlackboard().Set("cropfarm.crops", crop_positions);
         return Status::Success;
-
     }
+
     return Status::Failure;
 }
 
@@ -251,6 +261,7 @@ void OptimizeCropHarvestPath(std::vector<CropData>& crop_data, const Position& c
         double score_b = dist_b_to_player + 0.3 * dist_b_to_storage;
 
         return score_a < score_b;
+
     });
 }
 
@@ -264,10 +275,16 @@ Status FarmAndReplantCrops(BehaviourClient& client)
     std::shared_ptr<Config> cfg = Config::GetInstance();
 
     const Position client_pos = client.GetLocalPlayer()->GetPosition();
-    const Position storage_pos = Position(cfg->Storage[0], cfg->Storage[1], cfg->Storage[2]);
+    const Position storage_pos = Position(cfg->StoragePosition[0], cfg->StoragePosition[1], cfg->StoragePosition[2]);
 
     std::vector<CropData> crop_data = client.GetBlackboard().Get<std::vector<CropData>>("cropfarm.crops");
     OptimizeCropHarvestPath(crop_data, client_pos, storage_pos);
+
+    for(const CropData& cd : crop_data)
+    {
+        GoTo(client, cd.Position, 0, 0, 0, false, false);
+        LookAt(client, cd.Position);
+    }
     /*
         IsHitAndReplantCrop
         IsRightClickableCrop
@@ -278,4 +295,10 @@ Status FarmAndReplantCrops(BehaviourClient& client)
         GetPossibleHarvestOutput
     */
    return Status::Success;
+}
+
+Status UnloadInventoryToChest(BehaviourClient& client)
+{
+    // std::shared_ptr<Config> cfg = Config::GetInstance();
+    return Status::Success;
 }
