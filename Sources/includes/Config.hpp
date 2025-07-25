@@ -17,5 +17,6 @@ struct Config
         "minecraft:nether_wart"
     };
     std::array<int, 3> BasePosition = {131, 63, 219};
+    std::array<int, 3> Storage = {131, 63, 219};
     int WorkRange = 10;
 };

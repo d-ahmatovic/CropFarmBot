@@ -5,7 +5,7 @@
 
 #include "Config.hpp"
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Config, Address, LoginName, TargetBlocks, BasePosition, WorkRange)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Config, Address, LoginName, TargetBlocks, BasePosition, Storage, WorkRange)
 
 std::shared_ptr<Config> g_Config;
 
