@@ -16,8 +16,12 @@ set(BOTCRAFT_WINDOWS_BETTER_SLEEP ON)
 set(BOTCRAFT_USE_PRECOMPILED_HEADERS ON)
 set(BOTCRAFT_BUILD_DOC OFF)
 
+# Configure nlohmann_json
+set(JSON_BuildTests OFF)
+
 # Botcraft is the bot library used to deliver functionality
-add_subdirectory(Botcraft)
+add_subdirectory(dependencies/Botcraft)
+add_subdirectory(dependencies/nlohmann_json)
 
 # Here's the main code and application located
 add_subdirectory(Sources)

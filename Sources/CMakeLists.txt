@@ -1,16 +1,14 @@
 project(CropFarmer)
 
-# Declaring my source files
 set(SRC_FILES
     ${PROJECT_SOURCE_DIR}/src/main.cpp
-    ${PROJECT_SOURCE_DIR}/src/CropFarmClient.cpp
+    ${PROJECT_SOURCE_DIR}/src/CropFarmTasks.cpp
+    ${PROJECT_SOURCE_DIR}/src/Config.cpp
 )
 
-# Declaring my headers (this is not strictly 
-# necessary, but this will add them to the file
-# structure in visual on windows)
-set(HDR_FILES 
-    #${PROJECT_SOURCE_DIR}/includes/my_header.hpp
+set(HDR_FILES
+    ${PROJECT_SOURCE_DIR}/includes/CropFarmTasks.hpp
+    ${PROJECT_SOURCE_DIR}/includes/Config.hpp
 )
 
 # Create my target
@@ -21,7 +19,7 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 17)
 target_include_directories(${PROJECT_NAME} PUBLIC includes)
 
 # Linking my code to botcraft, cmake will handle everything
-target_link_libraries(${PROJECT_NAME} botcraft)
+target_link_libraries(${PROJECT_NAME} botcraft nlohmann_json::nlohmann_json)
 
 # All this stuff is not really necessary, we just set the output folder
 # to be the same than for botcraft so we don't need to manually copy the shared
