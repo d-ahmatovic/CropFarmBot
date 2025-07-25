@@ -16,19 +16,19 @@ int main(int argc, char* argv[])
         // Add a name to this thread for logging
         Botcraft::Logger::GetInstance().RegisterThread("main");
 
-        Config cfg = Config::Get("config.json");
+        Config::Read("config.json");
+        std::shared_ptr<Config> cfg = Config::GetInstance();
 
         auto action_tree = Botcraft::Builder<Botcraft::SimpleBehaviourClient>("empty tree").selector().end();
 
         Botcraft::SimpleBehaviourClient client(false);
         client.SetAutoRespawn(true);
 
-        client.Connect(cfg.Address, cfg.LoginName);
+        client.Connect(cfg->Address, cfg->LoginName);
 
         // Wait 10 seconds and start the flow afterwards
         Botcraft::Utilities::SleepFor(std::chrono::seconds(10));
         client.SetBehaviourTree(action_tree);
-
         client.RunBehaviourUntilClosed();
 
         client.Disconnect();

@@ -1,17 +1,29 @@
+#include <memory>
+#include <fstream>
+
+#include <nlohmann/json.hpp>
+
 #include "Config.hpp"
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Config, Address, LoginName, TargetBlocks)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Config, Address, LoginName, TargetBlocks, BasePosition, WorkRange)
 
-Config Config::Get(const char* file_path)
+std::shared_ptr<Config> g_Config;
+
+std::shared_ptr<Config> Config::GetInstance()
+{
+    return g_Config;
+}
+
+void Config::Read(const char* file_path)
 {
     std::ifstream input(file_path);
     if (input.good())
     {
         nlohmann::json data = nlohmann::json::parse(input);
-        return data.template get<Config>();
+        g_Config = std::make_shared<Config>(data.template get<Config>());
     }
     else
     {
-        return Config{};
+        g_Config = std::make_shared<Config>();
     }
 }

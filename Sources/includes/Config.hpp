@@ -1,15 +1,11 @@
-#include <fstream>
-#include <filesystem>
 #include <string>
 #include <vector>
-#include <exception>
-
-#include <nlohmann/json.hpp>
 
 
 struct Config
 {
-    static Config Get(const char* file_path);
+    static void Read(const char* file_path);
+    static std::shared_ptr<Config> GetInstance();
 
     std::string Address = "127.0.0.1:25565";
     std::string LoginName = "";
@@ -20,4 +16,6 @@ struct Config
         "minecraft:potatoes",
         "minecraft:nether_wart"
     };
+    std::array<int, 3> BasePosition = {131, 63, 219};
+    int WorkRange = 10;
 };
