@@ -4,11 +4,13 @@ set(SRC_FILES
     ${PROJECT_SOURCE_DIR}/src/main.cpp
     ${PROJECT_SOURCE_DIR}/src/CropFarmTasks.cpp
     ${PROJECT_SOURCE_DIR}/src/Config.cpp
+    ${PROJECT_SOURCE_DIR}/src/CropFarmBehaviour.cpp
 )
 
 set(HDR_FILES
     ${PROJECT_SOURCE_DIR}/includes/CropFarmTasks.hpp
     ${PROJECT_SOURCE_DIR}/includes/Config.hpp
+    ${PROJECT_SOURCE_DIR}/includes/CropFarmBehaviour.hpp
 )
 
 # Create my target

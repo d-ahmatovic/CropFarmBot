@@ -3,28 +3,47 @@
 
 #include <botcraft/AI/SimpleBehaviourClient.hpp>
 #include <botcraft/Utilities/Logger.hpp>
+#include <botcraft/Game/Vector3.hpp>
 
 #include "Config.hpp"
+#include "CropFarmBehaviour.hpp"
+
+
+using namespace Botcraft;
+
 
 int main(int argc, char* argv[])
 {
     try
     {
         // Init logging, log everything >= Info, only to console, no file
-        Botcraft::Logger::GetInstance().SetLogLevel(Botcraft::LogLevel::Info);
-        Botcraft::Logger::GetInstance().SetFilename("");
+        Logger::GetInstance().SetLogLevel(LogLevel::Info);
+        Logger::GetInstance().SetFilename("");
         // Add a name to this thread for logging
-        Botcraft::Logger::GetInstance().RegisterThread("main");
+        Logger::GetInstance().RegisterThread("main");
 
+
+        // Read config file
         Config::Read("config.json");
         std::shared_ptr<Config> cfg = Config::GetInstance();
 
-        auto action_tree = Botcraft::Builder<Botcraft::SimpleBehaviourClient>("empty tree").selector().end();
-
-        Botcraft::SimpleBehaviourClient client(false);
+        // Create client
+        SimpleBehaviourClient client(false);
         client.SetAutoRespawn(true);
 
+        // Set blackboard values that are used by the bot
+        {
+            Botcraft::Blackboard& blackboard = client.GetBlackboard();
+
+            blackboard.Set<Position>(CLIENT_BLACKBOARD_BASE, Position(cfg->BasePosition));
+            blackboard.Set<Position>(CLIENT_BLACKBOARD_CHEST, Position(cfg->StoragePosition));
+            blackboard.Set<Position>(CLIENT_BLACKBOARD_BED, Position(cfg->BedPosition));
+            blackboard.Set<int>(CLIENT_BLACKBOARD_RADIUS, cfg->WorkRange);
+        }
+
         client.Connect(cfg->Address, cfg->LoginName);
+
+        auto action_tree = Botcraft::Builder<Botcraft::SimpleBehaviourClient>("empty tree").selector().end();
 
         // Wait 10 seconds and start the flow afterwards
         Botcraft::Utilities::SleepFor(std::chrono::seconds(10));

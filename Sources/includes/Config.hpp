@@ -1,3 +1,6 @@
+#ifndef CFB_CONFIG_HEADER
+#define CFB_CONFIG_HEADER
+
 #include <string>
 #include <vector>
 
@@ -21,3 +24,4 @@ struct Config
     std::array<int, 3> BedPosition = {121, 63, 207};
     int WorkRange = 10;
 };
+#endif

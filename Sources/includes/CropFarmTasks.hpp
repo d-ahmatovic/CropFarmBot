@@ -1,8 +1,20 @@
+#ifndef CFB_TASKS_HEADER
+#define CFB_TASKS_HEADER
+
 #include "botcraft/AI/BehaviourClient.hpp"
 #include "botcraft/AI/Status.hpp"
 
 
+#define CLIENT_BLACKBOARD_BASE      "CropFarmTasks.Base"
+#define CLIENT_BLACKBOARD_CHEST     "CropFarmTasks.StorageUnit"
+#define CLIENT_BLACKBOARD_BED       "CropFarmTasks.Bed"
+#define CLIENT_BLACKBOARD_RADIUS    "CropFarmTasks.Radius"
+#define CLIENT_BLACKBOARD_CROPS     "CropFarmTasks.Crops"
+#define CLIENT_BLACKBOARD_TARGETS   "CropFarmTasks.TargetCrops"
+
+
 Botcraft::Status FindAllCrops(Botcraft::BehaviourClient& client);
+Botcraft::Status OptimizeCropHarvestPath(Botcraft::BehaviourClient& client);
 Botcraft::Status FarmAndReplantCrops(Botcraft::BehaviourClient& client);
 Botcraft::Status UnloadInventoryToChest(Botcraft::BehaviourClient& client);
 
@@ -11,35 +23,6 @@ struct CropData
 {
     Botcraft::Position Position;
     std::string_view CropName;
-
-    bool operator==(const CropData& other) const
-    {
-        return this->Position == other.Position && this->CropName == other.CropName;
-    }
 };
 
-namespace std
-{
-    template<>
-    struct hash<CropData>
-    {
-        size_t operator()(const CropData& data) const
-        {
-            size_t h1 = std::hash<Botcraft::Position>{}(data.Position);
-            size_t h2 = std::hash<std::string_view>{}(data.CropName);
-            return h1 ^ (h2 << 1);
-        }
-    };
-
-    template<>
-    struct hash<Botcraft::Position>
-    {
-        size_t operator()(const Botcraft::Position& data) const
-        {
-            size_t h1 = std::hash<double>{}(data.x);
-            size_t h2 = std::hash<double>{}(data.y);
-            size_t h3 = std::hash<double>{}(data.z);
-            return h1 ^ (h2 << 1) ^ (h3 << 2);
-        }
-    };
-}
+#endif

@@ -167,16 +167,43 @@ static std::vector<std::string_view> GetPossibleHarvestOutput(std::string_view b
     return {};
 }
 
+Status OptimizeCropHarvestPath(BehaviourClient& client)
+{
+    Blackboard& blackboard = client.GetBlackboard();
+
+    std::vector<CropData> crop_data = blackboard.Get<std::vector<CropData>>(CLIENT_BLACKBOARD_CROPS);
+    const Position& client_pos = client.GetLocalPlayer()->GetPosition();
+    const Position& storage_pos = blackboard.Get<Position>(CLIENT_BLACKBOARD_CHEST);
+
+
+    std::sort(crop_data.begin(), crop_data.end(), [&](const CropData& a, const CropData& b)
+    {
+        double dist_a_to_player = a.Position.SqrDist(client_pos); 
+        double dist_b_to_player = b.Position.SqrDist(client_pos);
+
+        double dist_a_to_storage = a.Position.SqrDist(storage_pos);
+        double dist_b_to_storage = b.Position.SqrDist(storage_pos);
+
+        double score_a = dist_a_to_player + 0.3 * dist_a_to_storage;
+        double score_b = dist_b_to_player + 0.3 * dist_b_to_storage;
+
+        return score_a < score_b;
+    });
+}
+
+
 Status FindAllCrops(BehaviourClient& client)
 {
-    std::shared_ptr<Config> cfg = Config::GetInstance();
-    int radius = cfg->WorkRange;
+    Blackboard& blackboard = client.GetBlackboard();
+    int radius = blackboard.Get<int>(CLIENT_BLACKBOARD_RADIUS);
+    std::vector<std::string> target_blocks = blackboard.Get<std::vector<std::string>>(CLIENT_BLACKBOARD_TARGETS);
 
-    std::unordered_set<CropData> crop_positions;
+
+    std::vector<CropData> crop_positions;
     std::shared_ptr<World> world = client.GetWorld();
 
-    const Position& client_pos = client.GetLocalPlayer()->GetPosition();
 
+    const Position& client_pos = client.GetLocalPlayer()->GetPosition();
     Position current_pos;
     int max_y = std::max(-radius, world->GetMinY());
     int min_y = std::min(radius + 1, world->GetMinY() + world->GetHeight());
@@ -199,7 +226,7 @@ Status FindAllCrops(BehaviourClient& client)
                 }
 
                 const std::string& block_name = block->GetName();
-                if (std::find(cfg->TargetBlocks.begin(), cfg->TargetBlocks.end(), block_name) == cfg->TargetBlocks.end())
+                if (std::find(target_blocks.begin(), target_blocks.end(), block_name) == target_blocks.end())
                 {
                     continue;
                 }
@@ -220,24 +247,29 @@ Status FindAllCrops(BehaviourClient& client)
 
                 if (IsHighGrowingCrop(block_name))
                 {
-                    Position search_pos = current_pos;
+                    // We expect this: Bottom-Block - First Crop-Block - Second Crop-Block
+                    // Second is our target, everything else is irrelevant!
+                    Position search_pos = current_pos - Position(0, 1, 0);
+                    
+                    const Blockstate* stem = world->GetBlock(search_pos);
 
-                    for (int i = 0; i < radius; i++)
+                    search_pos.y -= 1;
+                    const Blockstate* ground = world->GetBlock(search_pos);
+
+                    // Both blocks need to be valid, stem must have the same name (we only farm the second block, take bamboo as example)
+                    // and the ground block has to be something different (so we know that stem grows on it)
+                    // We only add the block to the set if all those conditions are true, so we test for the negative here
+                    if (stem == nullptr || ground == nullptr || stem->GetName() != block_name || ground->GetName() == block_name)
                     {
-
+                        continue;
                     }
-
-                    while (true)
-                    {
-                        const Blockstate* search_block = world->GetBlock(search_pos);
-                        // TODO: Add actual logic
-                    }
+                    
                 }
-                crop_positions.emplace(current_pos, block_name);
+                crop_positions.emplace_back(current_pos, block_name);
             }
         }
     }
-    client.GetBlackboard().Set("cropfarm.crops", crop_positions);
+    client.GetBlackboard().Set<std::vector<CropData>>(CLIENT_BLACKBOARD_CROPS, crop_positions);
 
     if (crop_positions.size() != 0)
     {
@@ -247,38 +279,14 @@ Status FindAllCrops(BehaviourClient& client)
     return Status::Failure;
 }
 
-void OptimizeCropHarvestPath(std::vector<CropData>& crop_data, const Position& client_pos, const Position& storage_pos)
-{
-    std::sort(crop_data.begin(), crop_data.end(), [&](const CropData& a, const CropData& b)
-    {
-        double dist_a_to_player = a.Position.SqrDist(client_pos); 
-        double dist_b_to_player = b.Position.SqrDist(client_pos);
-
-        double dist_a_to_storage = a.Position.SqrDist(storage_pos);
-        double dist_b_to_storage = b.Position.SqrDist(storage_pos);
-
-        double score_a = dist_a_to_player + 0.3 * dist_a_to_storage;
-        double score_b = dist_b_to_player + 0.3 * dist_b_to_storage;
-
-        return score_a < score_b;
-
-    });
-}
-
 Status FarmAndReplantCrops(BehaviourClient& client)
 {
-    if (!client.GetBlackboard().Contains("cropfarm.crops"))
-    {
-        return Status::Success;
-    }
+    Blackboard& blackboard = client.GetBlackboard();
 
-    std::shared_ptr<Config> cfg = Config::GetInstance();
+    std::vector<CropData> crop_data = blackboard.Get<std::vector<CropData>>(CLIENT_BLACKBOARD_CROPS);
+    const Position& client_pos = client.GetLocalPlayer()->GetPosition();
+    const Position& storage_pos = blackboard.Get<Position>(CLIENT_BLACKBOARD_CHEST);
 
-    const Position client_pos = client.GetLocalPlayer()->GetPosition();
-    const Position storage_pos = Position(cfg->StoragePosition[0], cfg->StoragePosition[1], cfg->StoragePosition[2]);
-
-    std::vector<CropData> crop_data = client.GetBlackboard().Get<std::vector<CropData>>("cropfarm.crops");
-    OptimizeCropHarvestPath(crop_data, client_pos, storage_pos);
 
     for(const CropData& cd : crop_data)
     {
@@ -299,6 +307,5 @@ Status FarmAndReplantCrops(BehaviourClient& client)
 
 Status UnloadInventoryToChest(BehaviourClient& client)
 {
-    // std::shared_ptr<Config> cfg = Config::GetInstance();
     return Status::Success;
 }
