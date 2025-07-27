@@ -6,6 +6,8 @@
 #include <botcraft/Game/Entities/LocalPlayer.hpp>
 #include <botcraft/Game/World/World.hpp>
 #include <botcraft/AI/Tasks/AllTasks.hpp>
+#include <botcraft/Game/Inventory/InventoryManager.hpp>
+#include <botcraft/Game/Inventory/Window.hpp>
 
 #include "CropFarmTasks.hpp"
 #include "Config.hpp"
@@ -191,7 +193,6 @@ Status OptimizeCropHarvestPath(BehaviourClient& client)
     });
 }
 
-
 Status FindAllCrops(BehaviourClient& client)
 {
     Blackboard& blackboard = client.GetBlackboard();
@@ -307,5 +308,60 @@ Status FarmAndReplantCrops(BehaviourClient& client)
 
 Status UnloadInventoryToChest(BehaviourClient& client)
 {
+    std::shared_ptr<Botcraft::InventoryManager> inventory_manager = client.GetInventoryManager();
+
+    // Get handle to the last opened window which should be the chest we want to deploy our items to
+    const short container_id = inventory_manager->GetFirstOpenedWindowId();
+    if (container_id == -1)
+    {
+        return Status::Failure;
+    }
+
+    // Get container windows, that allows access to its data
+    const std::shared_ptr<Window> container = inventory_manager->GetWindow(container_id);
+    if (container == nullptr)
+    {
+        CloseContainer(client, container_id);
+        return Status::Failure;
+    }
+
+    std::vector<short> inventory_filled_slots;
+    const short first_player_inv_id = container->GetFirstPlayerInventorySlot();
+    for (const auto& [id, slot] : container->GetSlots())
+    {
+        // first_player_inv_id = first slots on the top left in the inventory
+        // first_player_inv_id + (4 * 9) is the offhand, which is not available in chests
+        if (id < first_player_inv_id || id > (first_player_inv_id + (4 * 9) - 1) || slot.IsEmptySlot())
+        {
+            continue;
+        }
+
+        if (!slot.IsEmptySlot())
+        {
+            inventory_filled_slots.push_back(id);
+        }
+    }
+
     return Status::Success;
+}
+
+Status IsInventoryFilled(BehaviourClient& client)
+{
+    std::shared_ptr<Botcraft::InventoryManager> inventory_manager = client.GetInventoryManager();
+
+    auto slots = inventory_manager->GetPlayerInventory()->GetLockedSlots();
+    for (const auto& [id, slot] : *slots)
+    {
+        if (id < Window::INVENTORY_STORAGE_START || id > Window::INVENTORY_OFFHAND_INDEX)
+        {
+            continue;
+        }
+
+        if (!slot.IsEmptySlot())
+        {
+            return Status::Success;
+        }
+    }
+
+    return Status::Failure;
 }

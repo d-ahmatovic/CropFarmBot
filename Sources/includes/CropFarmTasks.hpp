@@ -17,6 +17,7 @@ Botcraft::Status FindAllCrops(Botcraft::BehaviourClient& client);
 Botcraft::Status OptimizeCropHarvestPath(Botcraft::BehaviourClient& client);
 Botcraft::Status FarmAndReplantCrops(Botcraft::BehaviourClient& client);
 Botcraft::Status UnloadInventoryToChest(Botcraft::BehaviourClient& client);
+Botcraft::Status IsInventoryFilled(Botcraft::BehaviourClient& client);
 
 
 struct CropData

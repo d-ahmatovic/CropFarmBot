@@ -41,9 +41,9 @@ int main(int argc, char* argv[])
             blackboard.Set<int>(CLIENT_BLACKBOARD_RADIUS, cfg->WorkRange);
         }
 
+        // Connect to server and set tree
         client.Connect(cfg->Address, cfg->LoginName);
-
-        auto action_tree = Botcraft::Builder<Botcraft::SimpleBehaviourClient>("empty tree").selector().end();
+        auto action_tree = CreateFullTree();
 
         // Wait 10 seconds and start the flow afterwards
         Botcraft::Utilities::SleepFor(std::chrono::seconds(10));

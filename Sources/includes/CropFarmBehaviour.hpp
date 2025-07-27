@@ -12,6 +12,7 @@ std::shared_ptr<Botcraft::BehaviourTree<Botcraft::SimpleBehaviourClient>> Create
 std::shared_ptr<Botcraft::BehaviourTree<Botcraft::SimpleBehaviourClient>> SearchAndOptimizeCropsTree();
 std::shared_ptr<Botcraft::BehaviourTree<Botcraft::SimpleBehaviourClient>> HarvestCropsTree();
 std::shared_ptr<Botcraft::BehaviourTree<Botcraft::SimpleBehaviourClient>> StoreCropsTree();
+std::shared_ptr<Botcraft::BehaviourTree<Botcraft::SimpleBehaviourClient>> CreateFullTree();
 
 
 #endif

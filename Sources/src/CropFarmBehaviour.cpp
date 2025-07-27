@@ -55,6 +55,37 @@ std::shared_ptr<Botcraft::BehaviourTree<Botcraft::SimpleBehaviourClient>> Harves
 std::shared_ptr<Botcraft::BehaviourTree<Botcraft::SimpleBehaviourClient>> StoreCropsTree()
 {
     return Botcraft::Builder<Botcraft::SimpleBehaviourClient>("Put harvested crops into chest")
+        .selector()
+            .inverter().leaf("Check if there are items present", IsInventoryFilled)
+            .sequence()
+                // Walk to chest
+                .leaf(Botcraft::CopyBlackboardData, CLIENT_BLACKBOARD_CHEST, "GoTo.goal")
+                .leaf(Botcraft::SetBlackboardData<int>, "GoTo.dist_tolerance", 3)
+                .leaf(Botcraft::SetBlackboardData<int>, "GoTo.min_end_dist", 0)
+                .leaf(Botcraft::SetBlackboardData<int>, "GoTo.min_end_dist_xz", 0)
+
+                // Sort items so they stack up (we may have placed some items beforehand)
+                .leaf(Botcraft::SortInventory)
+
+                // Open the container
+                .leaf(Botcraft::CopyBlackboardData, CLIENT_BLACKBOARD_CHEST, "OpenContainer.pos")
+                .selector()
+                    .inverter().leaf("Open chest", Botcraft::OpenContainerBlackboard)
+
+                    // Wait one second
+                    .repeater(100).inverter().leaf(Botcraft::Yield)
+
+                    .leaf("Unload items to chest", UnloadInventoryToChest)
+                .end()
+
+            .end()
+        .end();
+}
+
+std::shared_ptr<Botcraft::BehaviourTree<Botcraft::SimpleBehaviourClient>> CreateFullTree()
+{
+    return Botcraft::Builder<Botcraft::SimpleBehaviourClient>("Main tree")
         .sequence()
+            .leaf(IsInventoryFilled)
         .end();
 }
